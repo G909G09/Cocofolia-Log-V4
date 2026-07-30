@@ -4,14 +4,16 @@ Cocofolia-Log-V4 -> Cocofolia-Setter 동기화 스크립트.
 
 이 레포(Cocofolia-Log-V4)의 매크로 원본 파일이 바뀔 때마다
 Cocofolia-Setter 레포의 Cocofolia_Setter.html 안에 내장된 base64 블록과
-Cocofolia_Log_V4/ 미러 폴더, Cocofolia_Log_V4.zip을 갱신한다.
+Cocofolia_Log_V4/ 미러 폴더를 갱신한다.
+(과거에는 Cocofolia_Log_V4.zip 사본도 함께 만들었지만, Setter 앱이 같은 내용을
+다운로드 버튼에서 그때그때 만들어주고 미러 폴더도 있어 중복이라 더 이상 생성하지
+않는다 — 남아있다면 삭제한다.)
 
 사용법: python3 sync_to_setter.py <log_v4_repo_dir> <setter_repo_dir>
 """
 import base64
 import re
 import sys
-import zipfile
 from pathlib import Path
 
 SOURCE_FILES = {
@@ -67,14 +69,14 @@ def main():
         (mirror_dir / SOURCE_FILES[key]).write_bytes(path.read_bytes())
 
     zip_path = setter_dir / "Cocofolia_Log_V4.zip"
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        for key in ["html", "hwp", "msr", "usage"]:
-            zf.writestr(SOURCE_FILES[key], source_paths[key].read_bytes())
+    zip_removed = zip_path.exists()
+    zip_path.unlink(missing_ok=True)
 
     print("동기화 완료:")
     print(f"  - {setter_html_path} 내 base64 블록 3개 갱신 (hwp/msr/usage)")
     print(f"  - {mirror_dir} 미러 파일 4개 갱신")
-    print(f"  - {zip_path} 재생성")
+    if zip_removed:
+        print(f"  - {zip_path} 삭제 (미러 폴더/앱 내 다운로드 버튼과 중복이라 더 이상 생성하지 않음)")
 
 
 if __name__ == "__main__":
