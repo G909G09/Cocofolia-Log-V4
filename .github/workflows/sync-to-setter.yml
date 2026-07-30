@@ -1,0 +1,49 @@
+name: Sync macro to Cocofolia-Setter
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Cocofolia_Log_V4.html"
+      - "Cocofolia_Log_V4.hwp"
+      - "Cocofolia_Log_V4.msr"
+      - "사용법.txt"
+      - "scripts/sync_to_setter.py"
+  workflow_dispatch: {}
+
+env:
+  SETTER_REPO: G909G09/Cocofolia-Setter
+  SETTER_BRANCH: master
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Cocofolia-Log-V4
+        uses: actions/checkout@v4
+        with:
+          path: log-v4
+
+      - name: Checkout Cocofolia-Setter
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SETTER_REPO }}
+          ref: ${{ env.SETTER_BRANCH }}
+          token: ${{ secrets.SETTER_REPO_TOKEN }}
+          path: setter
+
+      - name: Run sync script
+        run: python3 log-v4/scripts/sync_to_setter.py log-v4 setter
+
+      - name: Commit and push if changed
+        working-directory: setter
+        run: |
+          git config user.name "cocofolia-log-v4-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "변경 사항 없음 — 건너뜀."
+          else
+            git commit -m "chore: sync macro files from Cocofolia-Log-V4 (${{ github.sha }})"
+            git push origin HEAD:${{ env.SETTER_BRANCH }}
+          fi
